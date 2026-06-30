@@ -246,6 +246,37 @@ raspberry/database/chatbot.sqlite
 - Optional: eSpeak NG or another offline text-to-speech engine
 - Optional: FastAPI for local admin/debug interface only
 
+## Current Program
+
+The current implementation is a runnable offline simulator of the Raspberry Pi OLED chatbot architecture.
+
+It includes:
+
+- Console-backed OLED display simulation.
+- USB keyboard-style console input.
+- Chatbot core with language detection and prompt building.
+- Offline translation service wrapper with an Argos Translate extension point.
+- Local AI service wrapper with a deterministic fallback response.
+- SQLite chat history, settings, and error logging.
+- Placeholder adapters for buttons, voice input, speech output, and hardware OLED rendering.
+
+Run from the project root:
+
+```powershell
+python -m raspberry.app.main
+```
+
+Useful commands inside the chatbot:
+
+```text
+/lang en
+/lang ta
+/lang hi
+/exit
+```
+
+The fallback AI keeps the application usable before a local GGUF model and `llama.cpp` are connected.
+
 ## Implementation Steps
 
 1. Prepare the Raspberry Pi
