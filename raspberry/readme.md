@@ -1,47 +1,107 @@
-# Offline Raspberry Pi Multilingual AI Chatbot
+# Offline Raspberry Pi OLED Multilingual AI Chatbot
 
-This project is a fully offline multilingual AI chatbot for Raspberry Pi. It is designed to run without internet access by using a local AI model, offline translation, and local storage.
+This project is a fully offline multilingual AI chatbot designed for a Raspberry Pi 4 or Raspberry Pi 5 board with an OLED display. It runs without internet access by using local processing, offline translation, local storage, and a lightweight device UI.
 
 ## Purpose
 
-This chatbot is for environments where internet access is unavailable, unreliable, expensive, or not allowed. It focuses on offline operation, privacy, local AI inference, local translation, and Raspberry Pi performance optimization.
+The goal is to build a compact offline chatbot device for environments where internet access is unavailable, unreliable, expensive, or not allowed. Because the target display is an OLED, the application should avoid heavy browser-based UI architecture and instead use a small device-oriented interface.
 
-## Architecture
+## Target Hardware
+
+- Raspberry Pi 4 or Raspberry Pi 5
+- OLED display using I2C or SPI
+- MicroSD card or SSD storage
+- Optional buttons, rotary encoder, USB keyboard, microphone, or speaker
+- Optional cooling, especially for Raspberry Pi 5 or long-running inference
+
+## Optimal Architecture
 
 ```text
-Touchscreen / Monitor
+User Input
+ Buttons / Keyboard / Voice
         |
         v
-Local Chat UI
+Device Controller
+ Python main loop
         |
-        v
-FastAPI Backend
-        |
- +------+----------------+
- |      |                |
-LLM  Offline Translator SQLite
- |      |
- +------+----------------+
-        |
-        v
-    Response
+        +-------------------+
+        |                   |
+        v                   v
+OLED Display Driver    Chatbot Core
+Status + short text    Prompt + session logic
+                            |
+       +--------------------+--------------------+
+       |                    |                    |
+       v                    v                    v
+Local AI Engine     Offline Translation      SQLite
+llama.cpp / small   English, Tamil, Hindi    chat history
+local model         translation service      settings
+       |                    |
+       +---------+----------+
+                 |
+                 v
+          Formatted Response
+                 |
+                 v
+          OLED Display Output
 ```
+
+## Architecture Decision
+
+For a Raspberry Pi 4 or 5 with an OLED display, the recommended architecture is a local Python application instead of a React web application.
+
+Use this approach:
+
+- Python application as the main runtime.
+- OLED display driver for device output.
+- Lightweight input handler for buttons, keyboard, rotary encoder, or voice input.
+- Local chatbot core for prompt and conversation management.
+- Local AI service for model inference.
+- Offline translation service for English, Tamil, and Hindi.
+- SQLite for chat history and settings.
+
+Avoid this for the OLED version:
+
+- React frontend as the primary UI.
+- Browser-based kiosk mode as the main interface.
+- Heavy FastAPI-only architecture when no network UI is needed.
+- Long responses that cannot fit on a small display.
+
+FastAPI can still be added later as an optional local admin or debugging interface, but it should not be the core runtime for the OLED device.
 
 ## Recommended Folder Structure
 
 ```text
 raspberry/
 |
-+-- frontend/
-|   +-- src/
-|   +-- public/
-|   +-- package.json
-|
-+-- backend/
++-- app/
 |   +-- main.py
-|   +-- routes/
-|   +-- services/
-|   +-- models/
+|   +-- controller.py
+|   +-- config.py
+|
++-- core/
+|   +-- chatbot.py
+|   +-- language_detector.py
+|   +-- prompt_builder.py
+|   +-- response_formatter.py
+|   +-- conversation_manager.py
+|   +-- utils.py
+|
++-- display/
+|   +-- oled_driver.py
+|   +-- screen_manager.py
+|   +-- text_layout.py
+|   +-- screens.py
+|
++-- input/
+|   +-- buttons.py
+|   +-- keyboard.py
+|   +-- voice_input.py
+|
++-- services/
+|   +-- local_ai.py
+|   +-- offline_translation.py
+|   +-- speech.py
 |
 +-- models/
 |   +-- local-llm-files/
@@ -53,136 +113,261 @@ raspberry/
 |   +-- chatbot.sqlite
 |   +-- schema.sql
 |
++-- scripts/
+|   +-- install.sh
+|   +-- run.sh
+|   +-- setup_service.sh
+|
 +-- readme.md
 ```
 
-The Raspberry Pi application should use the shared `core/` package for common chatbot behavior. Raspberry-specific files should only handle local AI, offline translation, local database storage, hardware constraints, and deployment on Raspberry Pi OS.
+## Core Modules
 
-## Core Dependency
-
-The Raspberry Pi application should connect to the core modules:
+The `core/` package contains reusable chatbot logic that should stay independent from Raspberry Pi hardware.
 
 ```text
 core/
 |
-+-- chatbot.py
-+-- language_detector.py
-+-- prompt_builder.py
-+-- response_formatter.py
-+-- conversation_manager.py
-+-- config.py
-+-- utils.py
++-- chatbot.py                # Main chatbot orchestration
++-- language_detector.py      # English, Tamil, Hindi detection or selection
++-- prompt_builder.py         # Builds prompts for the local model
++-- response_formatter.py     # Formats short OLED-friendly responses
++-- conversation_manager.py   # Tracks sessions and message history
++-- utils.py                  # Shared helper functions
 ```
 
-The `core/` package should not directly depend on `llama.cpp`, Argos Translate, Raspberry Pi OS, local model files, or SQLite implementation details. Those details belong in `raspberry/`.
+The core should not directly control the OLED, buttons, microphone, `llama.cpp`, Argos Translate, or SQLite implementation details. Those should be handled through service and device layers.
 
-## Features
+## OLED Display Layer
 
-- Runs without internet.
-- Local AI model.
-- Offline English, Tamil, and Hindi translation.
-- Local SQLite database.
-- Optimized for Raspberry Pi performance.
-- No external API dependencies.
-- Local-first privacy.
-- Touchscreen or monitor-based usage.
+The OLED display should show short, readable device states instead of full chat pages.
+
+### Recommended Screens
+
+- Boot screen
+- Ready screen
+- Listening or input screen
+- Processing screen
+- Response screen
+- Language selection screen
+- Error screen
+- Settings screen
+
+### Display Rules
+
+- Keep messages short.
+- Wrap text based on OLED width.
+- Use pagination for longer responses.
+- Show clear status labels such as `Ready`, `Thinking`, `Tamil`, or `Offline`.
+- Use high-contrast monochrome UI for small OLED displays.
+- Avoid dense paragraphs.
+
+## Input Options
+
+Choose one input method first, then add others later.
+
+### Recommended First Input
+
+Use a USB keyboard during development because it is simple and reliable.
+
+### Device Input Options
+
+- USB keyboard for typed messages.
+- Buttons for menu navigation.
+- Rotary encoder for scrolling and selection.
+- Microphone for voice input.
+- Speaker for spoken responses.
+
+For the first working version, use keyboard input and OLED output. Add buttons, voice input, and audio output after the chatbot flow is stable.
+
+## Local AI Strategy
+
+Raspberry Pi 4 and Raspberry Pi 5 can run local models, but performance depends heavily on model size, quantization, cooling, and memory.
+
+### Recommended Approach
+
+- Use `llama.cpp` for local inference.
+- Use a small quantized model.
+- Prefer short prompts and short answers.
+- Limit maximum response length.
+- Stream tokens if possible.
+- Keep conversation history compact.
+- Store only the most useful recent messages in the prompt.
+
+### Model Guidance
+
+- Raspberry Pi 4: use the smallest practical quantized model.
+- Raspberry Pi 5: can handle slightly larger models, especially with cooling.
+- Prefer GGUF quantized models.
+- Test response time before finalizing the model.
+
+## Offline Translation
+
+The chatbot should support English, Tamil, and Hindi without internet access.
+
+### Recommended Approach
+
+- Use Argos Translate if suitable language packages are available.
+- Store translation packages under `raspberry/translations/`.
+- Translate user input into the model's working language if needed.
+- Translate the model response back to the selected user language.
+- Cache repeated translations where possible.
+
+If translation quality or performance is not acceptable on Raspberry Pi, start with manual language selection and predefined multilingual responses for common device states.
+
+## Database
+
+Use SQLite for local storage.
+
+Store:
+
+- Chat sessions
+- Messages
+- Selected language
+- Device settings
+- Error logs
+- Model configuration
+
+Keep the database in:
+
+```text
+raspberry/database/chatbot.sqlite
+```
 
 ## Technologies
 
-- FastAPI
-- React served locally
+- Python 3
+- Raspberry Pi OS
+- OLED display library such as `luma.oled` or `Adafruit_CircuitPython_SSD1306`
 - `llama.cpp`
 - Argos Translate
 - SQLite
-- Raspberry Pi OS
+- Optional: Vosk or another offline speech-to-text engine
+- Optional: eSpeak NG or another offline text-to-speech engine
+- Optional: FastAPI for local admin/debug interface only
 
 ## Implementation Steps
 
 1. Prepare the Raspberry Pi
    - Install Raspberry Pi OS.
-   - Install Python 3.
-   - Install required build tools.
-   - Set up the project directory on the Raspberry Pi.
+   - Enable I2C or SPI based on the OLED module.
+   - Install Python 3 and required system packages.
+   - Confirm the OLED display works with a basic test script.
 
-2. Create the backend
-   - Set up a FastAPI application in `raspberry/backend/`.
-   - Reuse the shared `core/` package.
-   - Add local chat endpoints.
-   - Keep the backend independent from internet services.
+2. Build the OLED display layer
+   - Create `display/oled_driver.py`.
+   - Create `display/screen_manager.py`.
+   - Add basic screens for boot, ready, processing, response, and error states.
+   - Add text wrapping and pagination.
 
-3. Add local AI support
+3. Add the input layer
+   - Start with USB keyboard input.
+   - Add button or rotary encoder navigation after the basic flow works.
+   - Keep input handling separate from chatbot logic.
+
+4. Build the chatbot core
+   - Create the `core/` modules.
+   - Implement conversation management.
+   - Implement prompt building.
+   - Implement response formatting for short OLED output.
+   - Add language selection for English, Tamil, and Hindi.
+
+5. Add local AI support
    - Install and configure `llama.cpp`.
-   - Download or prepare a small model that can run on Raspberry Pi hardware.
-   - Prefer quantized models for better performance.
-   - Create a local AI service wrapper in `raspberry/backend/`.
-   - Send prompts from `core/prompt_builder.py` to the local model.
+   - Add a small quantized local model.
+   - Create `services/local_ai.py`.
+   - Limit response length and keep prompts compact.
 
-4. Add offline translation
+6. Add offline translation
    - Install Argos Translate.
-   - Add English, Tamil, and Hindi translation packages.
-   - Create an offline translation service in `raspberry/backend/`.
-   - Store translation assets in `raspberry/translations/`.
+   - Add available English, Tamil, and Hindi translation packages.
+   - Create `services/offline_translation.py`.
+   - Cache translations if repeated phrases are common.
 
-5. Add local database support
-   - Use SQLite for chat history.
-   - Store sessions, messages, timestamps, and selected language locally.
-   - Keep the database inside `raspberry/database/`.
+7. Add SQLite storage
+   - Create `database/schema.sql`.
+   - Store chat history and settings locally.
+   - Keep database access outside the chatbot core.
 
-6. Serve the local UI
-   - Build the React frontend as static files.
-   - Serve the UI locally through FastAPI or a lightweight local server.
-   - Support touchscreen or monitor-based usage.
+8. Create the main controller
+   - Create `app/main.py`.
+   - Create `app/controller.py`.
+   - Connect input, display, chatbot core, local AI, translation, and database services.
+   - Add graceful error handling and startup checks.
 
-7. Optimize for Raspberry Pi
-   - Use small or quantized local models.
-   - Limit maximum response length.
-   - Stream responses if possible.
-   - Reduce background tasks.
-   - Keep the UI lightweight.
-   - Monitor CPU, memory, and temperature during testing.
+9. Optimize for Raspberry Pi 4/5
+   - Use a small quantized model.
+   - Reduce prompt size.
+   - Limit output tokens.
+   - Use response streaming if possible.
+   - Monitor CPU, memory, and temperature.
+   - Add cooling if inference causes throttling.
 
-8. Test offline behavior
-   - Disconnect internet and confirm the application still works.
+10. Run as a device service
+   - Create a startup script.
+   - Add a `systemd` service.
+   - Start the chatbot automatically after boot.
+   - Log errors to a local file.
+
+11. Test offline behavior
+   - Disconnect internet.
+   - Reboot the Raspberry Pi.
+   - Confirm the OLED shows the boot and ready screens.
    - Test English, Tamil, and Hindi conversations.
-   - Test local model response time.
-   - Test startup after reboot.
-   - Test database persistence.
-   - Test touchscreen or monitor usage.
+   - Test long responses, errors, and database persistence.
 
-## User Flow
+## Device User Flow
 
 ```text
-User
+Power On
    |
    v
-Local React UI
+OLED Boot Screen
    |
    v
-FastAPI
+Load Model + Translation + Database
    |
-   +-- Argos Translate
-   +-- llama.cpp
-         |
-         v
-     Response
+   v
+Ready Screen
+   |
+   v
+User Enters Message
+   |
+   v
+Translate if Needed
+   |
+   v
+Local AI Generates Response
+   |
+   v
+Format Short OLED Response
+   |
+   v
+Display Response Page
 ```
 
 ## Development Roadmap
 
-1. Build the shared `core/` package.
-2. Create the local FastAPI backend.
-3. Reuse or adapt the React frontend.
-4. Add `llama.cpp` integration.
-5. Add Argos Translate integration.
-6. Add local SQLite storage.
-7. Optimize for Raspberry Pi performance.
-8. Test with internet disconnected.
+1. Test OLED display output.
+2. Build the device controller loop.
+3. Add keyboard input.
+4. Build the chatbot core.
+5. Add SQLite settings and chat history.
+6. Add local AI inference.
+7. Add offline translation.
+8. Add buttons or rotary encoder.
+9. Add optional voice input and speech output.
+10. Configure auto-start on boot.
+11. Test fully offline on Raspberry Pi 4 and Raspberry Pi 5.
 
 ## Implementation Principles
 
-- Keep reusable chatbot logic in `core/`.
-- Keep offline AI and translation code inside `raspberry/`.
+- Design for the OLED first.
+- Keep the UI short, readable, and state-based.
+- Keep hardware code separate from chatbot logic.
+- Keep local AI and translation behind service wrappers.
 - Avoid external API dependencies.
-- Use service wrappers for local AI and translation.
-- Make the Raspberry Pi edition fully local and privacy-friendly.
-- Prioritize reliability and performance over large model size.
+- Keep prompts and responses short.
+- Optimize for reliability before model size.
+- Store all data locally.
+- Make the device usable immediately after boot.
