@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Offline language helpers for English, Tamil, and Hindi."""
+
 
 SUPPORTED_LANGUAGES = {
     "en": "English",
@@ -9,6 +11,8 @@ SUPPORTED_LANGUAGES = {
 
 
 def normalize_language(language: str | None) -> str:
+    """Normalize user-facing language names into stable language codes."""
+
     if not language:
         return "en"
     value = language.strip().lower()

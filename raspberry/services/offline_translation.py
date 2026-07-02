@@ -1,15 +1,23 @@
 from __future__ import annotations
 
+"""Offline translation service wrapper."""
+
+
+class TranslationConfigurationError(RuntimeError):
+    """Raised when translation is required but unavailable."""
+
 
 class OfflineTranslator:
-    """Offline translation facade.
+    """Translate text offline through Argos Translate when installed.
 
-    If Argos Translate is installed later, wire it in here. The current fallback
-    keeps the program fully runnable without internet or extra packages.
+    When `required` is false, missing Argos packages become a no-op so the
+    English-first hardware flow can still be tested. When `required` is true,
+    missing translation support fails clearly at runtime.
     """
 
-    def __init__(self, model_language: str = "en") -> None:
+    def __init__(self, model_language: str = "en", required: bool = False) -> None:
         self.model_language = model_language
+        self.required = required
         self._argos = self._load_argos()
 
     def translate_to_model_language(self, text: str, source_language: str) -> str:
@@ -22,8 +30,19 @@ class OfflineTranslator:
         if source_language == target_language:
             return text
         if self._argos is None:
+            if self.required:
+                raise TranslationConfigurationError(
+                    "Argos Translate is required but not installed."
+                )
             return text
         return self._argos.translate(text, source_language, target_language)
+
+    def status(self) -> str:
+        """Return a user-readable description of translation availability."""
+
+        if self._argos is None:
+            return "passthrough"
+        return "Argos"
 
     def _load_argos(self):
         try:

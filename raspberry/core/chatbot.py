@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""High-level chatbot orchestration independent from hardware."""
+
 from raspberry.core.conversation_manager import ConversationManager
 from raspberry.core.language_detector import detect_language, normalize_language
 from raspberry.core.prompt_builder import PromptBuilder
@@ -10,6 +12,8 @@ from raspberry.services.offline_translation import OfflineTranslator
 
 
 class Chatbot:
+    """Coordinate language handling, prompt building, AI, and formatting."""
+
     def __init__(
         self,
         ai: LocalAI,
@@ -27,10 +31,14 @@ class Chatbot:
         self.language = normalize_language(language)
 
     def set_language(self, language: str) -> str:
+        """Set the preferred response language and return its normalized code."""
+
         self.language = normalize_language(language)
         return self.language
 
     def respond(self, user_text: str) -> str:
+        """Generate a short response for one user message."""
+
         cleaned = normalize_text(user_text)
         detected_language = detect_language(cleaned, self.language)
         active_language = detected_language or self.language

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Device controller that connects input, display, chatbot, and storage."""
+
 from raspberry.core.chatbot import Chatbot
 from raspberry.core.language_detector import SUPPORTED_LANGUAGES
 from raspberry.display.screen_manager import ScreenManager
@@ -9,6 +11,8 @@ from raspberry.services.storage import SQLiteStorage
 
 
 class DeviceController:
+    """Main event loop for the physical chatbot device."""
+
     def __init__(
         self,
         chatbot: Chatbot,
@@ -25,6 +29,8 @@ class DeviceController:
         self.default_language = default_language
 
     def startup(self) -> None:
+        """Initialize persistent storage and show the ready screen."""
+
         self.display.show(BOOT)
         self.storage.initialize()
         self.session_id = self.storage.create_session(self.default_language)
@@ -32,6 +38,8 @@ class DeviceController:
         self.display.show(READY)
 
     def run(self) -> None:
+        """Read user messages until an exit command is received."""
+
         self.startup()
         while True:
             message = self.keyboard.read_message()
@@ -42,6 +50,9 @@ class DeviceController:
                 break
             if message.lower().startswith("/lang"):
                 self._handle_language_command(message)
+                continue
+            if message.lower() == "/status":
+                self.display.show(Screen("Status", self._status_text()))
                 continue
 
             try:
@@ -56,6 +67,8 @@ class DeviceController:
                 self.display.show(Screen("Error", str(exc)))
 
     def _handle_language_command(self, message: str) -> None:
+        """Handle `/lang` commands for manual language selection."""
+
         parts = message.split(maxsplit=1)
         if len(parts) != 2:
             self.display.show(Screen("Language", "Use /lang en, /lang ta, or /lang hi"))
@@ -64,3 +77,10 @@ class DeviceController:
         self.storage.save_setting("language", language)
         label = SUPPORTED_LANGUAGES.get(language, language)
         self.display.show(Screen("Language", f"Selected {label}"))
+
+    def _status_text(self) -> str:
+        """Return a concise runtime status suitable for the OLED."""
+
+        ai_status = self.chatbot.ai.status()
+        translation_status = self.chatbot.translator.status()
+        return f"AI {ai_status}. Translate {translation_status}."

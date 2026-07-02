@@ -1,30 +1,68 @@
 from __future__ import annotations
 
+"""Local AI service for llama.cpp with explicit fallback behavior."""
+
+import shutil
 import subprocess
 from pathlib import Path
 
 
+class LocalAIConfigurationError(RuntimeError):
+    """Raised when local AI is required but not configured correctly."""
+
+
 class LocalAI:
-    """Local AI facade for llama.cpp with a deterministic fallback."""
+    """Generate responses using llama.cpp or an explicitly enabled fallback.
+
+    The fallback exists so the device controller, display, database, and input
+    stack can be tested before the model is installed. For a finished hardware
+    model, set `CHATBOT_ALLOW_FALLBACK_AI=false` and provide `CHATBOT_MODEL`.
+    """
 
     def __init__(
         self,
         model_path: Path | None = None,
-        llama_binary: str | None = None,
+        llama_binary: str = "llama-cli",
         max_tokens: int = 80,
+        timeout_seconds: int = 120,
+        allow_fallback: bool = True,
     ) -> None:
         self.model_path = model_path
         self.llama_binary = llama_binary
         self.max_tokens = max_tokens
+        self.timeout_seconds = timeout_seconds
+        self.allow_fallback = allow_fallback
 
     def generate(self, prompt: str, user_text: str) -> str:
-        if self.llama_binary and self.model_path:
+        if self.model_path:
+            self._validate_llama_config()
             return self._generate_with_llama(prompt)
+        if not self.allow_fallback:
+            raise LocalAIConfigurationError(
+                "CHATBOT_MODEL is required when fallback AI is disabled."
+            )
         return self._fallback_response(user_text)
+
+    def status(self) -> str:
+        """Return a user-readable description of the active AI backend."""
+
+        if self.model_path:
+            return "llama.cpp"
+        return "fallback"
+
+    def _validate_llama_config(self) -> None:
+        if self.model_path is None or not self.model_path.is_file():
+            raise LocalAIConfigurationError(
+                f"Local model file was not found: {self.model_path}"
+            )
+        if shutil.which(self.llama_binary) is None:
+            raise LocalAIConfigurationError(
+                f"llama.cpp binary was not found on PATH: {self.llama_binary}"
+            )
 
     def _generate_with_llama(self, prompt: str) -> str:
         command = [
-            self.llama_binary or "llama-cli",
+            self.llama_binary,
             "-m",
             str(self.model_path),
             "-p",
@@ -37,7 +75,7 @@ class LocalAI:
             check=True,
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=self.timeout_seconds,
         )
         return result.stdout.strip()
 

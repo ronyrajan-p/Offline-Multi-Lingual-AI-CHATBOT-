@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+"""Prompt construction for compact local model responses."""
+
 from .conversation_manager import Message
 from .language_detector import SUPPORTED_LANGUAGES
 
 
 class PromptBuilder:
+    """Build prompts that favor short OLED-friendly answers."""
+
     def build(self, user_text: str, language: str, history: list[Message]) -> str:
+        """Create a local-model prompt from user text and recent history."""
+
         language_name = SUPPORTED_LANGUAGES.get(language, "English")
         history_lines = [
             f"{message.role}: {message.content}" for message in history[-6:]

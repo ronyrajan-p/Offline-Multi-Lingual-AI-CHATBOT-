@@ -255,10 +255,10 @@ It includes:
 - Console-backed OLED display simulation.
 - USB keyboard-style console input.
 - Chatbot core with language detection and prompt building.
-- Offline translation service wrapper with an Argos Translate extension point.
-- Local AI service wrapper with a deterministic fallback response.
+- Offline translation service wrapper with optional Argos Translate support.
+- Local AI service wrapper for `llama.cpp` with an explicit fallback mode.
 - SQLite chat history, settings, and error logging.
-- Placeholder adapters for buttons, voice input, speech output, and hardware OLED rendering.
+- Documented adapters for buttons, voice input, speech output, and hardware OLED rendering.
 
 Run from the project root:
 
@@ -272,10 +272,107 @@ Useful commands inside the chatbot:
 /lang en
 /lang ta
 /lang hi
+/status
 /exit
 ```
 
-The fallback AI keeps the application usable before a local GGUF model and `llama.cpp` are connected.
+The fallback AI keeps the application usable before a local GGUF model and `llama.cpp` are connected. For a finished hardware build, disable the fallback and provide a real model path.
+
+## Hardware Configuration
+
+The program reads hardware settings from environment variables. This avoids hidden assumptions in the code.
+
+Copy the example settings before configuring a Raspberry Pi:
+
+```bash
+cp raspberry/.env.example raspberry/.env
+```
+
+Then export the values you need in your shell or systemd service file.
+
+### Development Mode
+
+Use the console OLED simulator:
+
+```powershell
+$env:CHATBOT_DISPLAY_DRIVER="console"
+python -m raspberry.app.main
+```
+
+### Raspberry Pi OLED Mode
+
+Use a real I2C SSD1306 OLED:
+
+```bash
+export CHATBOT_DISPLAY_DRIVER=ssd1306_i2c
+export CHATBOT_I2C_PORT=1
+export CHATBOT_I2C_ADDRESS=0x3C
+python3 -m raspberry.app.main
+```
+
+For common 128x64 I2C OLED modules:
+
+| OLED Pin | Raspberry Pi Pin |
+| --- | --- |
+| VCC | Pin 1, 3.3V |
+| GND | Pin 6, GND |
+| SDA | Pin 3, GPIO2 |
+| SCL | Pin 5, GPIO3 |
+
+Enable I2C on Raspberry Pi:
+
+```bash
+sudo raspi-config
+sudo reboot
+```
+
+Verify the OLED address:
+
+```bash
+i2cdetect -y 1
+```
+
+Install hardware dependencies:
+
+```bash
+python3 -m pip install -r raspberry/requirements.txt
+```
+
+### Local AI Configuration
+
+Run with fallback AI during hardware testing:
+
+```bash
+export CHATBOT_ALLOW_FALLBACK_AI=true
+python3 -m raspberry.app.main
+```
+
+Run with a real local model:
+
+```bash
+export CHATBOT_ALLOW_FALLBACK_AI=false
+export CHATBOT_MODEL=/home/pi/models/model.gguf
+export CHATBOT_LLAMA_BINARY=llama-cli
+python3 -m raspberry.app.main
+```
+
+If the model file or `llama-cli` binary is missing, the program will show a clear error instead of silently reporting that the local model is working.
+
+### Translation Configuration
+
+Run with translation passthrough during early testing:
+
+```bash
+export CHATBOT_REQUIRE_TRANSLATION=false
+```
+
+Require Argos Translate for multilingual operation:
+
+```bash
+export CHATBOT_REQUIRE_TRANSLATION=true
+```
+
+If translation is required and Argos Translate is not installed, the program will fail clearly.
 
 ## Implementation Steps
 

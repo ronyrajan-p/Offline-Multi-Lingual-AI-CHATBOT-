@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+raspberry/database/*.sqlite
+raspberry/models/local-llm-files/
+raspberry/translations/argos-packages/
+.venv/
+venv/

@@ -1,14 +1,18 @@
 from __future__ import annotations
 
-from raspberry.display.oled_driver import ConsoleOLEDDriver
+"""Screen rendering utilities for small OLED displays."""
+
+from raspberry.display.oled_driver import DisplayDriver
 from raspberry.display.screens import Screen
 from raspberry.display.text_layout import paginate, wrap_text
 
 
 class ScreenManager:
+    """Wrap text and send one page of content to the active display driver."""
+
     def __init__(
         self,
-        driver: ConsoleOLEDDriver,
+        driver: DisplayDriver,
         width_chars: int,
         height_lines: int,
     ) -> None:
