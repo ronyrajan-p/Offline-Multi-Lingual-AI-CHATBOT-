@@ -48,6 +48,7 @@ def build_controller() -> DeviceController:
         keyboard=KeyboardInput(),
         storage=storage,
         default_language=config.default_language,
+        response_page_seconds=config.display_page_seconds,
     )
 
 

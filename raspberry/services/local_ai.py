@@ -69,6 +69,15 @@ class LocalAI:
             prompt,
             "-n",
             str(self.max_tokens),
+            "--ctx-size",
+            "2048",
+            "--temp",
+            "0.7",
+            "--top-p",
+            "0.9",
+            "--repeat-penalty",
+            "1.12",
+            "--no-display-prompt",
         ]
         result = subprocess.run(
             command,
@@ -77,7 +86,20 @@ class LocalAI:
             text=True,
             timeout=self.timeout_seconds,
         )
-        return result.stdout.strip()
+        return self._clean_model_output(result.stdout)
+
+    def _clean_model_output(self, output: str) -> str:
+        """Remove ChatML control tokens that may appear in llama.cpp output."""
+
+        cleaned = output.strip()
+        if "<|im_end|>" in cleaned:
+            cleaned = cleaned.split("<|im_end|>", 1)[0]
+        return (
+            cleaned.replace("<|im_start|>assistant", "")
+            .replace("<|im_start|>", "")
+            .replace("<|im_end|>", "")
+            .strip()
+        )
 
     def _fallback_response(self, user_text: str) -> str:
         lowered = user_text.lower()

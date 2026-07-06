@@ -2,6 +2,8 @@ from __future__ import annotations
 
 """Screen rendering utilities for small OLED displays."""
 
+import time
+
 from raspberry.display.oled_driver import DisplayDriver
 from raspberry.display.screens import Screen
 from raspberry.display.text_layout import paginate, wrap_text
@@ -28,3 +30,14 @@ class ScreenManager:
         lines = wrap_text(text, self.width_chars)
         page = paginate(lines, self.height_lines)[0]
         self.driver.render(page)
+
+    def show_pages(self, screen: Screen, seconds_per_page: float) -> None:
+        """Render all pages for a screen, pausing between pages."""
+
+        content = f"{screen.title}\n{screen.body}".strip()
+        lines = wrap_text(content, self.width_chars)
+        pages = paginate(lines, self.height_lines)
+        for index, page in enumerate(pages):
+            self.driver.render(page)
+            if index < len(pages) - 1:
+                time.sleep(seconds_per_page)

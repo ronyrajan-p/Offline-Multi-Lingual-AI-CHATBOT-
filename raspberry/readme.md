@@ -278,6 +278,22 @@ Useful commands inside the chatbot:
 
 The fallback AI keeps the application usable before a local GGUF model and `llama.cpp` are connected. For a finished hardware build, disable the fallback and provide a real model path.
 
+### Qwen Tamil And Hindi Responses
+
+The chatbot uses Qwen-style ChatML prompts for Qwen2.5 Instruct models. For Tamil output, select Tamil with:
+
+```text
+/lang ta
+```
+
+For Hindi output, select Hindi with:
+
+```text
+/lang hi
+```
+
+Then ask your question normally. The prompt tells Qwen to generate a fresh Tamil or Hindi response in the correct script instead of using fixed demo-style replies.
+
 ## Hardware Configuration
 
 The program reads hardware settings from environment variables. This avoids hidden assumptions in the code.
@@ -307,8 +323,11 @@ Use a real I2C SSD1306 OLED:
 export CHATBOT_DISPLAY_DRIVER=ssd1306_i2c
 export CHATBOT_I2C_PORT=1
 export CHATBOT_I2C_ADDRESS=0x3C
+export CHATBOT_DISPLAY_PAGE_SECONDS=2.5
 python3 -m raspberry.app.main
 ```
+
+Chatbot responses are rendered to the OLED through the same display path as boot, status, and language screens. Longer responses are wrapped and shown page by page. Increase `CHATBOT_DISPLAY_PAGE_SECONDS` if pages change too quickly.
 
 For common 128x64 I2C OLED modules:
 
@@ -353,6 +372,7 @@ Run with a real local model:
 export CHATBOT_ALLOW_FALLBACK_AI=false
 export CHATBOT_MODEL=/home/pi/models/model.gguf
 export CHATBOT_LLAMA_BINARY=llama-cli
+export CHATBOT_DISPLAY_DRIVER=ssd1306_i2c
 python3 -m raspberry.app.main
 ```
 

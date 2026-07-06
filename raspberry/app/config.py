@@ -52,6 +52,7 @@ class AppConfig:
     display_height_pixels: int = 64
     display_i2c_port: int = 1
     display_i2c_address: int = 0x3C
+    display_page_seconds: float = 2.5
     max_response_chars: int = 420
     llama_binary: str = "llama-cli"
     llama_timeout_seconds: int = 120
@@ -73,6 +74,7 @@ config = AppConfig(
     display_height_pixels=_env_int("CHATBOT_OLED_HEIGHT", 64),
     display_i2c_port=_env_int("CHATBOT_I2C_PORT", 1),
     display_i2c_address=_env_int("CHATBOT_I2C_ADDRESS", 0x3C),
+    display_page_seconds=float(os.getenv("CHATBOT_DISPLAY_PAGE_SECONDS", "2.5")),
     max_response_chars=_env_int("CHATBOT_MAX_RESPONSE_CHARS", 420),
     llama_binary=os.getenv("CHATBOT_LLAMA_BINARY", "llama-cli"),
     llama_timeout_seconds=_env_int("CHATBOT_LLAMA_TIMEOUT", 120),

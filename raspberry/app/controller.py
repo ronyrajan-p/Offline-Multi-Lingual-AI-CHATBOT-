@@ -20,6 +20,7 @@ class DeviceController:
         keyboard: KeyboardInput,
         storage: SQLiteStorage,
         default_language: str,
+        response_page_seconds: float,
     ) -> None:
         self.chatbot = chatbot
         self.display = display
@@ -27,6 +28,7 @@ class DeviceController:
         self.storage = storage
         self.session_id: int | None = None
         self.default_language = default_language
+        self.response_page_seconds = response_page_seconds
 
     def startup(self) -> None:
         """Initialize persistent storage and show the ready screen."""
@@ -61,7 +63,10 @@ class DeviceController:
                 if self.session_id is not None:
                     self.storage.save_message(self.session_id, "user", message)
                     self.storage.save_message(self.session_id, "assistant", response)
-                self.display.show(Screen("Response", response))
+                self.display.show_pages(
+                    Screen("Response", response),
+                    self.response_page_seconds,
+                )
             except Exception as exc:
                 self.storage.log_error(str(exc))
                 self.display.show(Screen("Error", str(exc)))

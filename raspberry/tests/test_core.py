@@ -1,12 +1,14 @@
 from raspberry.core.conversation_manager import ConversationManager
 from raspberry.core.language_detector import detect_language, normalize_language
+from raspberry.core.prompt_builder import PromptBuilder
 from raspberry.core.response_formatter import ResponseFormatter
+from raspberry.display.text_layout import paginate, wrap_text
 
 
 def test_language_detection_unicode_ranges():
     assert detect_language("hello") == "en"
-    assert detect_language("வணக்கம்") == "ta"
-    assert detect_language("नमस्ते") == "hi"
+    assert detect_language("\u0bb5\u0ba3\u0b95\u0bcd\u0b95\u0bae\u0bcd") == "ta"
+    assert detect_language("\u0928\u092e\u0938\u094d\u0924\u0947") == "hi"
 
 
 def test_language_aliases():
@@ -29,3 +31,23 @@ def test_conversation_keeps_recent_messages():
 def test_response_formatter_truncates():
     formatter = ResponseFormatter(max_chars=8)
     assert formatter.format("hello world") == "hello..."
+
+
+def test_text_layout_paginates_response_for_oled():
+    wrapped = wrap_text("one two three four", 7)
+    assert paginate(wrapped, 2) == [["one two", "three"], ["four"]]
+
+
+def test_prompt_builder_uses_qwen_chatml_for_tamil():
+    prompt = PromptBuilder().build("weather?", "ta", [])
+    assert "<|im_start|>system" in prompt
+    assert "Reply only in natural Tamil script" in prompt
+    assert "<|im_start|>assistant" in prompt
+
+
+def test_prompt_builder_uses_qwen_chatml_for_hindi():
+    prompt = PromptBuilder().build("weather?", "hi", [])
+    assert "<|im_start|>system" in prompt
+    assert "Reply only in natural Hindi using Devanagari script" in prompt
+    assert "Do not give a prewritten Hindi greeting" in prompt
+    assert "<|im_start|>assistant" in prompt
