@@ -272,9 +272,12 @@ Useful commands inside the chatbot:
 /lang en
 /lang ta
 /lang hi
+/language hi
 /status
 /exit
 ```
+
+The controller also accepts `/ lang hi` with a space after `/`. If `/lang ta` or `/lang hi` appears to get a model-generated answer, you are probably inside raw `llama-cli` instead of this Python chatbot app.
 
 The fallback AI keeps the application usable before a local GGUF model and `llama.cpp` are connected. For a finished hardware build, disable the fallback and provide a real model path.
 

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 """Device controller that connects input, display, chatbot, and storage."""
 
+import re
+
 from raspberry.core.chatbot import Chatbot
 from raspberry.core.language_detector import SUPPORTED_LANGUAGES
 from raspberry.display.screen_manager import ScreenManager
@@ -50,8 +52,9 @@ class DeviceController:
             if message.lower() in {"/quit", "/exit"}:
                 self.display.show(Screen("Bye", "Offline chatbot stopped"))
                 break
-            if message.lower().startswith("/lang"):
-                self._handle_language_command(message)
+            language_command = self._parse_language_command(message)
+            if language_command is not None:
+                self._handle_language_command(language_command)
                 continue
             if message.lower() == "/status":
                 self.display.show(Screen("Status", self._status_text()))
@@ -71,14 +74,21 @@ class DeviceController:
                 self.storage.log_error(str(exc))
                 self.display.show(Screen("Error", str(exc)))
 
-    def _handle_language_command(self, message: str) -> None:
+    def _parse_language_command(self, message: str) -> str | None:
+        """Return the requested language from `/lang` command variants."""
+
+        match = re.fullmatch(r"/\s*(?:lang|language)\s+(\S+)", message.strip(), re.I)
+        if match is None:
+            return None
+        return match.group(1)
+
+    def _handle_language_command(self, language_request: str) -> None:
         """Handle `/lang` commands for manual language selection."""
 
-        parts = message.split(maxsplit=1)
-        if len(parts) != 2:
+        if not language_request:
             self.display.show(Screen("Language", "Use /lang en, /lang ta, or /lang hi"))
             return
-        language = self.chatbot.set_language(parts[1])
+        language = self.chatbot.set_language(language_request)
         self.storage.save_setting("language", language)
         label = SUPPORTED_LANGUAGES.get(language, language)
         self.display.show(Screen("Language", f"Selected {label}"))
@@ -88,4 +98,5 @@ class DeviceController:
 
         ai_status = self.chatbot.ai.status()
         translation_status = self.chatbot.translator.status()
-        return f"AI {ai_status}. Translate {translation_status}."
+        label = SUPPORTED_LANGUAGES.get(self.chatbot.language, self.chatbot.language)
+        return f"AI {ai_status}. Lang {label}. Translate {translation_status}."

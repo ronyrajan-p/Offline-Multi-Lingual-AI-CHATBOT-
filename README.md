@@ -293,6 +293,8 @@ For Hindi output, select Hindi with:
 
 Then ask your question normally. The prompt tells Qwen to generate a fresh Tamil or Hindi response in the correct script instead of using fixed demo-style replies.
 
+Language commands are handled by the Python chatbot before they reach Qwen. Use `/lang ta`, `/lang hi`, or `/language hi`. If `/lang ta` gets a model-generated answer, you are probably inside raw `llama-cli` instead of this app.
+
 ### OLED Chatbot Responses
 
 Use OLED mode when running the real device:

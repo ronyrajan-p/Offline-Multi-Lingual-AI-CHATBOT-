@@ -3,6 +3,7 @@ from raspberry.core.language_detector import detect_language, normalize_language
 from raspberry.core.prompt_builder import PromptBuilder
 from raspberry.core.response_formatter import ResponseFormatter
 from raspberry.display.text_layout import paginate, wrap_text
+from raspberry.app.main import build_controller
 
 
 def test_language_detection_unicode_ranges():
@@ -51,3 +52,11 @@ def test_prompt_builder_uses_qwen_chatml_for_hindi():
     assert "Reply only in natural Hindi using Devanagari script" in prompt
     assert "Do not give a prewritten Hindi greeting" in prompt
     assert "<|im_start|>assistant" in prompt
+
+
+def test_controller_accepts_language_command_variants():
+    controller = build_controller()
+    assert controller._parse_language_command("/lang hi") == "hi"
+    assert controller._parse_language_command("/ lang hi") == "hi"
+    assert controller._parse_language_command("/language ta") == "ta"
+    assert controller._parse_language_command("What is your name") is None

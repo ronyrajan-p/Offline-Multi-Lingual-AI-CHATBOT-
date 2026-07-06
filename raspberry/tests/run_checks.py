@@ -11,6 +11,7 @@ from raspberry.core.prompt_builder import PromptBuilder
 from raspberry.core.response_formatter import ResponseFormatter
 from raspberry.display.text_layout import paginate, wrap_text
 from raspberry.services.local_ai import LocalAI, LocalAIConfigurationError
+from raspberry.app.main import build_controller
 
 
 def main() -> None:
@@ -43,6 +44,11 @@ def main() -> None:
     assert "Reply only in natural Hindi using Devanagari script" in hindi_prompt
     assert "Do not give a prewritten Hindi greeting" in hindi_prompt
     assert "<|im_start|>assistant" in hindi_prompt
+    controller = build_controller()
+    assert controller._parse_language_command("/lang hi") == "hi"
+    assert controller._parse_language_command("/ lang hi") == "hi"
+    assert controller._parse_language_command("/language ta") == "ta"
+    assert controller._parse_language_command("What is your name") is None
 
     raised = False
     try:
