@@ -4,6 +4,7 @@ from raspberry.core.prompt_builder import PromptBuilder
 from raspberry.core.response_formatter import ResponseFormatter
 from raspberry.display.text_layout import paginate, wrap_text
 from raspberry.app.main import build_controller
+from raspberry.services.local_ai import LocalAI
 
 
 def test_language_detection_unicode_ranges():
@@ -60,3 +61,16 @@ def test_controller_accepts_language_command_variants():
     assert controller._parse_language_command("/ lang hi") == "hi"
     assert controller._parse_language_command("/language ta") == "ta"
     assert controller._parse_language_command("What is your name") is None
+
+
+def test_llama_command_is_non_interactive():
+    ai = LocalAI(model_path=__file__)
+    command = ai._build_llama_command("prompt", "--no-conversation")
+    assert "--no-conversation" in command
+    assert "--log-disable" in command
+
+
+def test_llama_output_cleaner_removes_echoed_prompt():
+    ai = LocalAI(model_path=__file__)
+    output = "<|im_start|>system\nx\n<|im_start|>assistant\nhello<|im_end|>"
+    assert ai._clean_model_output(output) == "hello"

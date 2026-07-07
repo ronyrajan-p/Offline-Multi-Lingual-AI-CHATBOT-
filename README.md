@@ -297,6 +297,8 @@ Language commands are handled by the Python chatbot before they reach Qwen. Use 
 
 Start the chatbot with `python3 -m raspberry.app.main`. Starting `llama-cli` directly bypasses the command parser and OLED update logic.
 
+When the app calls Qwen internally, `llama-cli` is run as a one-shot worker process. You should not see the large `llama.cpp` banner or `available commands` list after a normal message.
+
 ### OLED Chatbot Responses
 
 Use OLED mode when running the real device:

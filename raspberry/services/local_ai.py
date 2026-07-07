@@ -68,6 +68,37 @@ class LocalAI:
             )
 
     def _generate_with_llama(self, prompt: str) -> str:
+        attempts = [
+            ("--no-conversation", True),
+            ("-no-cnv", True),
+            ("--no-conversation", False),
+            ("-no-cnv", False),
+        ]
+        result: subprocess.CompletedProcess[str] | None = None
+        for conversation_flag, disable_logs in attempts:
+            command = self._build_llama_command(
+                prompt,
+                conversation_flag=conversation_flag,
+                disable_logs=disable_logs,
+            )
+            result = self._run_llama(command)
+            if not self._looks_like_unsupported_flag(result):
+                break
+        if result is None:
+            raise LocalAIConfigurationError("llama.cpp was not executed.")
+        if result.returncode != 0:
+            stderr = result.stderr.strip() or "llama.cpp failed without stderr output."
+            raise LocalAIConfigurationError(stderr)
+        return self._clean_model_output(result.stdout)
+
+    def _build_llama_command(
+        self,
+        prompt: str,
+        conversation_flag: str,
+        disable_logs: bool = True,
+    ) -> list[str]:
+        """Build a one-shot llama.cpp command that cannot enter REPL mode."""
+
         command = [
             self.llama_binary,
             "-m",
@@ -84,21 +115,45 @@ class LocalAI:
             "0.9",
             "--repeat-penalty",
             "1.12",
+            conversation_flag,
             "--no-display-prompt",
         ]
+        if disable_logs:
+            command.append("--log-disable")
+        return command
+
+    def _run_llama(self, command: list[str]) -> subprocess.CompletedProcess[str]:
+        """Run llama.cpp as a worker process, isolated from the terminal."""
+
         result = subprocess.run(
             command,
-            check=True,
+            check=False,
             capture_output=True,
+            stdin=subprocess.DEVNULL,
             text=True,
             timeout=self.timeout_seconds,
         )
-        return self._clean_model_output(result.stdout)
+        return result
+
+    def _looks_like_unsupported_flag(
+        self,
+        result: subprocess.CompletedProcess[str],
+    ) -> bool:
+        """Detect older llama.cpp builds that use a different flag spelling."""
+
+        output = f"{result.stdout}\n{result.stderr}".lower()
+        return result.returncode != 0 and (
+            "unknown argument" in output
+            or "invalid argument" in output
+            or "unrecognized option" in output
+        )
 
     def _clean_model_output(self, output: str) -> str:
         """Remove ChatML control tokens that may appear in llama.cpp output."""
 
         cleaned = output.strip()
+        if "<|im_start|>assistant" in cleaned:
+            cleaned = cleaned.rsplit("<|im_start|>assistant", 1)[-1]
         if "<|im_end|>" in cleaned:
             cleaned = cleaned.split("<|im_end|>", 1)[0]
         return (

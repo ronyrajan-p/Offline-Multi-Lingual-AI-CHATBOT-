@@ -281,6 +281,8 @@ The controller also accepts `/ lang hi` with a space after `/`. If `/lang ta` or
 
 The app entry point is `python3 -m raspberry.app.main`. Do not start `llama-cli` directly if you want `/lang`, `/status`, and OLED updates to work.
 
+When the app calls Qwen internally, it runs `llama-cli` in one-shot non-interactive mode. You should not see the large `llama.cpp` banner or an `available commands` list after typing a normal chatbot message. If that appears, update the project on the Pi and confirm `python3 -m raspberry.app.main` is being used.
+
 The fallback AI keeps the application usable before a local GGUF model and `llama.cpp` are connected. For a finished hardware build, disable the fallback and provide a real model path.
 
 ### Qwen Tamil And Hindi Responses
