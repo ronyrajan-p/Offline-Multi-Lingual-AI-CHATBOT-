@@ -306,12 +306,20 @@ export CHATBOT_DISPLAY_DRIVER=ssd1306_i2c
 export CHATBOT_I2C_PORT=1
 export CHATBOT_I2C_ADDRESS=0x3C
 export CHATBOT_DISPLAY_PAGE_SECONDS=2.5
-export CHATBOT_FONT_PATH=/usr/share/fonts/truetype/noto/NotoSansTamil-Regular.ttf
+export CHATBOT_FONT_PATH=
 export CHATBOT_FONT_SIZE=10
 python3 -m raspberry.app.main
 ```
 
 Chatbot responses use the same OLED display path as boot, status, and language screens. Longer responses are wrapped and shown page by page.
+
+If the OLED shows random patterns, test the display without the LLM:
+
+```bash
+python3 -m raspberry.scripts.oled_test
+```
+
+If patterns continue, try `CHATBOT_DISPLAY_DRIVER=sh1106_i2c`; many 1.3 inch OLED modules use SH1106 instead of SSD1306.
 
 Install Noto fonts on the Pi for Tamil and Hindi OLED rendering:
 

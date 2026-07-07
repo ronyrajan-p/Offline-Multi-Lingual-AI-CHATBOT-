@@ -57,17 +57,19 @@ def _build_display_driver():
 
     if config.display_driver == "console":
         return ConsoleOLEDDriver()
-    if config.display_driver == "ssd1306_i2c":
+    if config.display_driver in {"ssd1306_i2c", "sh1106_i2c"}:
         return HardwareOLEDDriver(
+            device_type=config.display_driver.removesuffix("_i2c"),
             width=config.display_width_pixels,
             height=config.display_height_pixels,
             i2c_port=config.display_i2c_port,
             i2c_address=config.display_i2c_address,
             font_path=config.display_font_path,
             font_size=config.display_font_size,
+            rotate=config.display_rotate,
         )
     raise ValueError(
-        "CHATBOT_DISPLAY_DRIVER must be either 'console' or 'ssd1306_i2c'."
+        "CHATBOT_DISPLAY_DRIVER must be 'console', 'ssd1306_i2c', or 'sh1106_i2c'."
     )
 
 

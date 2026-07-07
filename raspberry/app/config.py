@@ -36,10 +36,10 @@ def _env_int(name: str, default: int) -> int:
 class AppConfig:
     """Runtime settings for the offline device.
 
-    `display_driver` accepts `console` for development or `ssd1306_i2c` for a
-    real I2C OLED. `allow_fallback_ai` keeps the program runnable before a GGUF
-    model is installed; set it to `false` on the finished hardware build so
-    missing AI configuration is surfaced immediately.
+    `display_driver` accepts `console`, `ssd1306_i2c`, or `sh1106_i2c`.
+    `allow_fallback_ai` keeps the program runnable before a GGUF model is
+    installed; set it to `false` on the finished hardware build so missing AI
+    configuration is surfaced immediately.
     """
 
     database_path: Path = BASE_DIR / "database" / "chatbot.sqlite"
@@ -55,6 +55,7 @@ class AppConfig:
     display_page_seconds: float = 2.5
     display_font_path: Path | None = None
     display_font_size: int = 10
+    display_rotate: int = 0
     max_response_chars: int = 420
     llama_binary: str = "llama-cli"
     llama_timeout_seconds: int = 120
@@ -79,6 +80,7 @@ config = AppConfig(
     display_page_seconds=float(os.getenv("CHATBOT_DISPLAY_PAGE_SECONDS", "2.5")),
     display_font_path=Path(os.getenv("CHATBOT_FONT_PATH")) if os.getenv("CHATBOT_FONT_PATH") else None,
     display_font_size=_env_int("CHATBOT_FONT_SIZE", 10),
+    display_rotate=_env_int("CHATBOT_OLED_ROTATE", 0),
     max_response_chars=_env_int("CHATBOT_MAX_RESPONSE_CHARS", 420),
     llama_binary=os.getenv("CHATBOT_LLAMA_BINARY", "llama-cli"),
     llama_timeout_seconds=_env_int("CHATBOT_LLAMA_TIMEOUT", 120),

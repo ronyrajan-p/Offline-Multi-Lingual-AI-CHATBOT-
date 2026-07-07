@@ -322,16 +322,29 @@ python -m raspberry.app.main
 
 ### Raspberry Pi OLED Mode
 
-Use a real I2C SSD1306 OLED:
+Use a real I2C OLED. Many 0.96 inch modules are `ssd1306_i2c`; many 1.3 inch modules are `sh1106_i2c`.
 
 ```bash
 export CHATBOT_DISPLAY_DRIVER=ssd1306_i2c
 export CHATBOT_I2C_PORT=1
 export CHATBOT_I2C_ADDRESS=0x3C
 export CHATBOT_DISPLAY_PAGE_SECONDS=2.5
-export CHATBOT_FONT_PATH=/usr/share/fonts/truetype/noto/NotoSansTamil-Regular.ttf
+export CHATBOT_FONT_PATH=
 export CHATBOT_FONT_SIZE=10
 python3 -m raspberry.app.main
+```
+
+If the display shows random patterns or unreadable blocks, try:
+
+```bash
+export CHATBOT_DISPLAY_DRIVER=sh1106_i2c
+python3 -m raspberry.scripts.oled_test
+```
+
+Run the OLED-only diagnostic before testing the chatbot:
+
+```bash
+python3 -m raspberry.scripts.oled_test
 ```
 
 Chatbot responses are rendered to the OLED through the same display path as boot, status, and language screens. Longer responses are wrapped and shown page by page. Increase `CHATBOT_DISPLAY_PAGE_SECONDS` if pages change too quickly.
@@ -349,7 +362,7 @@ Useful font paths:
 /usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf
 ```
 
-If you mainly test Tamil, use the Tamil font. If you mainly test Hindi, use the Devanagari font. A single tiny OLED font may not render every script perfectly; if boxes appear, switch `CHATBOT_FONT_PATH` to the matching Noto font.
+Start with `CHATBOT_FONT_PATH=` empty while debugging English OLED output. After English is readable, set the Tamil or Devanagari font for Indian language tests. If boxes appear, switch `CHATBOT_FONT_PATH` to the matching Noto font.
 
 For common 128x64 I2C OLED modules:
 
