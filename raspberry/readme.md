@@ -279,6 +279,8 @@ Useful commands inside the chatbot:
 
 The controller also accepts `/ lang hi` with a space after `/`. If `/lang ta` or `/lang hi` appears to get a model-generated answer, you are probably inside raw `llama-cli` instead of this Python chatbot app.
 
+The app entry point is `python3 -m raspberry.app.main`. Do not start `llama-cli` directly if you want `/lang`, `/status`, and OLED updates to work.
+
 The fallback AI keeps the application usable before a local GGUF model and `llama.cpp` are connected. For a finished hardware build, disable the fallback and provide a real model path.
 
 ### Qwen Tamil And Hindi Responses
@@ -327,10 +329,27 @@ export CHATBOT_DISPLAY_DRIVER=ssd1306_i2c
 export CHATBOT_I2C_PORT=1
 export CHATBOT_I2C_ADDRESS=0x3C
 export CHATBOT_DISPLAY_PAGE_SECONDS=2.5
+export CHATBOT_FONT_PATH=/usr/share/fonts/truetype/noto/NotoSansTamil-Regular.ttf
+export CHATBOT_FONT_SIZE=10
 python3 -m raspberry.app.main
 ```
 
 Chatbot responses are rendered to the OLED through the same display path as boot, status, and language screens. Longer responses are wrapped and shown page by page. Increase `CHATBOT_DISPLAY_PAGE_SECONDS` if pages change too quickly.
+
+Install Noto fonts on the Pi so Tamil and Hindi glyphs render correctly:
+
+```bash
+sudo apt install -y fonts-noto-core fonts-noto-extra
+```
+
+Useful font paths:
+
+```text
+/usr/share/fonts/truetype/noto/NotoSansTamil-Regular.ttf
+/usr/share/fonts/truetype/noto/NotoSansDevanagari-Regular.ttf
+```
+
+If you mainly test Tamil, use the Tamil font. If you mainly test Hindi, use the Devanagari font. A single tiny OLED font may not render every script perfectly; if boxes appear, switch `CHATBOT_FONT_PATH` to the matching Noto font.
 
 For common 128x64 I2C OLED modules:
 
@@ -376,6 +395,7 @@ export CHATBOT_ALLOW_FALLBACK_AI=false
 export CHATBOT_MODEL=/home/pi/models/model.gguf
 export CHATBOT_LLAMA_BINARY=llama-cli
 export CHATBOT_DISPLAY_DRIVER=ssd1306_i2c
+export CHATBOT_FONT_PATH=/usr/share/fonts/truetype/noto/NotoSansTamil-Regular.ttf
 python3 -m raspberry.app.main
 ```
 

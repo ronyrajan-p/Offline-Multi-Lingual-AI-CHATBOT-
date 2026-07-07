@@ -63,6 +63,8 @@ def _build_display_driver():
             height=config.display_height_pixels,
             i2c_port=config.display_i2c_port,
             i2c_address=config.display_i2c_address,
+            font_path=config.display_font_path,
+            font_size=config.display_font_size,
         )
     raise ValueError(
         "CHATBOT_DISPLAY_DRIVER must be either 'console' or 'ssd1306_i2c'."

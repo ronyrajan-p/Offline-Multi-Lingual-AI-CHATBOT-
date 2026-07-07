@@ -35,6 +35,7 @@ class DeviceController:
     def startup(self) -> None:
         """Initialize persistent storage and show the ready screen."""
 
+        print("Python chatbot app started. Commands: /status, /lang en, /lang ta, /lang hi, /exit")
         self.display.show(BOOT)
         self.storage.initialize()
         self.session_id = self.storage.create_session(self.default_language)
@@ -63,15 +64,19 @@ class DeviceController:
             try:
                 self.display.show(PROCESSING)
                 response = self.chatbot.respond(message)
+                if not response.strip():
+                    raise RuntimeError("Model returned an empty response.")
                 if self.session_id is not None:
                     self.storage.save_message(self.session_id, "user", message)
                     self.storage.save_message(self.session_id, "assistant", response)
+                print(f"assistant: {response}")
                 self.display.show_pages(
                     Screen("Response", response),
                     self.response_page_seconds,
                 )
             except Exception as exc:
                 self.storage.log_error(str(exc))
+                print(f"error: {exc}")
                 self.display.show(Screen("Error", str(exc)))
 
     def _parse_language_command(self, message: str) -> str | None:
@@ -91,6 +96,7 @@ class DeviceController:
         language = self.chatbot.set_language(language_request)
         self.storage.save_setting("language", language)
         label = SUPPORTED_LANGUAGES.get(language, language)
+        print(f"language: {label}")
         self.display.show(Screen("Language", f"Selected {label}"))
 
     def _status_text(self) -> str:

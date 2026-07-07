@@ -34,9 +34,16 @@ class LocalAI:
         self.allow_fallback = allow_fallback
 
     def generate(self, prompt: str, user_text: str) -> str:
+        """Generate one assistant response."""
+
         if self.model_path:
             self._validate_llama_config()
-            return self._generate_with_llama(prompt)
+            response = self._generate_with_llama(prompt)
+            if not response.strip():
+                raise LocalAIConfigurationError(
+                    "llama.cpp returned an empty response for the current prompt."
+                )
+            return response
         if not self.allow_fallback:
             raise LocalAIConfigurationError(
                 "CHATBOT_MODEL is required when fallback AI is disabled."

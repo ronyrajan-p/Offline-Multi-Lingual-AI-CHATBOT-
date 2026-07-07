@@ -2,6 +2,7 @@ from __future__ import annotations
 
 """Display drivers for development and Raspberry Pi OLED hardware."""
 
+from pathlib import Path
 from typing import Protocol
 
 
@@ -42,6 +43,8 @@ class HardwareOLEDDriver:
         height: int = 64,
         i2c_port: int = 1,
         i2c_address: int = 0x3C,
+        font_path: Path | None = None,
+        font_size: int = 10,
     ) -> None:
         try:
             from luma.core.interface.serial import i2c
@@ -54,10 +57,14 @@ class HardwareOLEDDriver:
 
         self._image_cls = Image
         self._draw_cls = ImageDraw
-        self._font = ImageFont.load_default()
+        self._font = (
+            ImageFont.truetype(str(font_path), font_size)
+            if font_path
+            else ImageFont.load_default()
+        )
         serial = i2c(port=i2c_port, address=i2c_address)
         self._device = ssd1306(serial, width=width, height=height)
-        self._line_height = 10
+        self._line_height = max(font_size + 2, 10)
 
     def render(self, lines: list[str]) -> None:
         image = self._image_cls.new("1", self._device.size)

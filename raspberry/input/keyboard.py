@@ -9,4 +9,4 @@ class KeyboardInput:
     def read_message(self) -> str:
         """Prompt for and return one user message."""
 
-        return input("> ").strip()
+        return input("chatbot> ").strip()

@@ -295,6 +295,8 @@ Then ask your question normally. The prompt tells Qwen to generate a fresh Tamil
 
 Language commands are handled by the Python chatbot before they reach Qwen. Use `/lang ta`, `/lang hi`, or `/language hi`. If `/lang ta` gets a model-generated answer, you are probably inside raw `llama-cli` instead of this app.
 
+Start the chatbot with `python3 -m raspberry.app.main`. Starting `llama-cli` directly bypasses the command parser and OLED update logic.
+
 ### OLED Chatbot Responses
 
 Use OLED mode when running the real device:
@@ -304,10 +306,18 @@ export CHATBOT_DISPLAY_DRIVER=ssd1306_i2c
 export CHATBOT_I2C_PORT=1
 export CHATBOT_I2C_ADDRESS=0x3C
 export CHATBOT_DISPLAY_PAGE_SECONDS=2.5
+export CHATBOT_FONT_PATH=/usr/share/fonts/truetype/noto/NotoSansTamil-Regular.ttf
+export CHATBOT_FONT_SIZE=10
 python3 -m raspberry.app.main
 ```
 
 Chatbot responses use the same OLED display path as boot, status, and language screens. Longer responses are wrapped and shown page by page.
+
+Install Noto fonts on the Pi for Tamil and Hindi OLED rendering:
+
+```bash
+sudo apt install -y fonts-noto-core fonts-noto-extra
+```
 
 ## Implementation Steps
 
