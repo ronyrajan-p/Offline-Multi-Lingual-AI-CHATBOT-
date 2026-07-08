@@ -14,5 +14,6 @@ class Screen:
 
 
 BOOT = Screen("Boot", "Loading offline chatbot")
+WAITING_AI = Screen("Waiting AI", "Connecting to llama-server")
 READY = Screen("Ready", "Type a message")
 PROCESSING = Screen("Thinking", "Generating response")

@@ -7,7 +7,7 @@ import re
 from raspberry.core.chatbot import Chatbot
 from raspberry.core.language_detector import SUPPORTED_LANGUAGES
 from raspberry.display.screen_manager import ScreenManager
-from raspberry.display.screens import BOOT, PROCESSING, READY, Screen
+from raspberry.display.screens import BOOT, PROCESSING, READY, WAITING_AI, Screen
 from raspberry.input.keyboard import KeyboardInput
 from raspberry.services.storage import SQLiteStorage
 
@@ -23,6 +23,7 @@ class DeviceController:
         storage: SQLiteStorage,
         default_language: str,
         response_page_seconds: float,
+        ai_startup_wait_seconds: float = 60,
     ) -> None:
         self.chatbot = chatbot
         self.display = display
@@ -31,6 +32,7 @@ class DeviceController:
         self.session_id: int | None = None
         self.default_language = default_language
         self.response_page_seconds = response_page_seconds
+        self.ai_startup_wait_seconds = ai_startup_wait_seconds
 
     def startup(self) -> None:
         """Initialize persistent storage and show the ready screen."""
@@ -40,7 +42,29 @@ class DeviceController:
         self.storage.initialize()
         self.session_id = self.storage.create_session(self.default_language)
         self.storage.save_setting("language", self.default_language)
+        self._wait_for_ai_ready()
         self.display.show(READY)
+
+    def _wait_for_ai_ready(self) -> None:
+        """Poll llama-server before showing Ready so the first message doesn't stall.
+
+        If `allow_fallback_ai` is enabled, a short wait is enough since the
+        fallback responder can take over. If fallback is disabled, this waits
+        the full budget because a finished hardware build requires the real
+        model.
+        """
+
+        if self.chatbot.ai.is_server_ready():
+            return
+        wait_seconds = (
+            self.ai_startup_wait_seconds if not self.chatbot.ai.allow_fallback else 5
+        )
+        self.display.show(WAITING_AI)
+        ready = self.chatbot.ai.wait_until_ready(wait_seconds)
+        if not ready and not self.chatbot.ai.allow_fallback:
+            self.display.show(
+                Screen("AI Offline", "llama-server did not respond in time")
+            )
 
     def run(self) -> None:
         """Read user messages until an exit command is received."""

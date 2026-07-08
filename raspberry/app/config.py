@@ -37,9 +37,17 @@ class AppConfig:
     """Runtime settings for the offline device.
 
     `display_driver` accepts `console`, `ssd1306_i2c`, or `sh1106_i2c`.
-    `allow_fallback_ai` keeps the program runnable before a GGUF model is
-    installed; set it to `false` on the finished hardware build so missing AI
-    configuration is surfaced immediately.
+    `allow_fallback_ai` keeps the program runnable before `llama-server` is
+    installed; set it to `false` on the finished hardware build so a missing
+    or unreachable model server is surfaced immediately instead of silently
+    falling back.
+
+    Model inference runs through `llama-server`, started as its own
+    persistent systemd service (see `scripts/start_llama_server.sh`), not by
+    this application. `llama_server_host`/`llama_server_port` point at that
+    service; `llama_server_startup_wait_seconds` controls how long the
+    controller waits for `/health` at boot before giving up and using the
+    fallback responder.
     """
 
     database_path: Path = BASE_DIR / "database" / "chatbot.sqlite"
@@ -57,8 +65,10 @@ class AppConfig:
     display_font_size: int = 10
     display_rotate: int = 0
     max_response_chars: int = 420
-    llama_binary: str = "llama-cli"
-    llama_timeout_seconds: int = 120
+    llama_server_host: str = "127.0.0.1"
+    llama_server_port: int = 8080
+    llama_request_timeout_seconds: int = 60
+    llama_server_startup_wait_seconds: int = 60
     local_ai_max_tokens: int = 80
     default_language: str = "en"
     display_driver: str = "console"
@@ -82,8 +92,10 @@ config = AppConfig(
     display_font_size=_env_int("CHATBOT_FONT_SIZE", 10),
     display_rotate=_env_int("CHATBOT_OLED_ROTATE", 0),
     max_response_chars=_env_int("CHATBOT_MAX_RESPONSE_CHARS", 420),
-    llama_binary=os.getenv("CHATBOT_LLAMA_BINARY", "llama-cli"),
-    llama_timeout_seconds=_env_int("CHATBOT_LLAMA_TIMEOUT", 120),
+    llama_server_host=os.getenv("CHATBOT_LLAMA_SERVER_HOST", "127.0.0.1"),
+    llama_server_port=_env_int("CHATBOT_LLAMA_SERVER_PORT", 8080),
+    llama_request_timeout_seconds=_env_int("CHATBOT_LLAMA_REQUEST_TIMEOUT", 60),
+    llama_server_startup_wait_seconds=_env_int("CHATBOT_LLAMA_STARTUP_WAIT", 60),
     local_ai_max_tokens=_env_int("CHATBOT_AI_MAX_TOKENS", 80),
     default_language=os.getenv("CHATBOT_LANGUAGE", "en"),
     display_driver=os.getenv("CHATBOT_DISPLAY_DRIVER", "console"),

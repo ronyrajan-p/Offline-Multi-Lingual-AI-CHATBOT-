@@ -21,10 +21,10 @@ def build_controller() -> DeviceController:
 
     storage = SQLiteStorage(config.database_path, config.schema_path)
     ai = LocalAI(
-        model_path=config.model_path,
-        llama_binary=config.llama_binary,
+        host=config.llama_server_host,
+        port=config.llama_server_port,
         max_tokens=config.local_ai_max_tokens,
-        timeout_seconds=config.llama_timeout_seconds,
+        request_timeout_seconds=config.llama_request_timeout_seconds,
         allow_fallback=config.allow_fallback_ai,
     )
     translator = OfflineTranslator(required=config.require_translation)
@@ -49,6 +49,7 @@ def build_controller() -> DeviceController:
         storage=storage,
         default_language=config.default_language,
         response_page_seconds=config.display_page_seconds,
+        ai_startup_wait_seconds=config.llama_server_startup_wait_seconds,
     )
 
 

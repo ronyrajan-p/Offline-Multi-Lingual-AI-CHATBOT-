@@ -4,7 +4,7 @@ from raspberry.core.prompt_builder import PromptBuilder
 from raspberry.core.response_formatter import ResponseFormatter
 from raspberry.display.text_layout import paginate, wrap_text
 from raspberry.app.main import build_controller
-from raspberry.services.local_ai import LocalAI
+from raspberry.services.local_ai import LocalAI, LocalAIConfigurationError
 
 
 def test_language_detection_unicode_ranges():
@@ -63,14 +63,24 @@ def test_controller_accepts_language_command_variants():
     assert controller._parse_language_command("What is your name") is None
 
 
-def test_llama_command_is_non_interactive():
-    ai = LocalAI(model_path=__file__)
-    command = ai._build_llama_command("prompt", "--no-conversation")
-    assert "--no-conversation" in command
-    assert "--log-disable" in command
-
-
 def test_llama_output_cleaner_removes_echoed_prompt():
-    ai = LocalAI(model_path=__file__)
+    ai = LocalAI()
     output = "<|im_start|>system\nx\n<|im_start|>assistant\nhello<|im_end|>"
     assert ai._clean_model_output(output) == "hello"
+
+
+def test_server_unreachable_falls_back_when_allowed():
+    ai = LocalAI(host="127.0.0.1", port=1, allow_fallback=True)
+    assert ai.is_server_ready(timeout_seconds=0.2) is False
+    assert "fallback" in ai.generate("prompt", "hello").lower() or "offline" in ai.generate(
+        "prompt", "hello"
+    ).lower()
+
+
+def test_server_unreachable_raises_when_fallback_disabled():
+    ai = LocalAI(host="127.0.0.1", port=1, allow_fallback=False)
+    try:
+        ai.generate("prompt", "hello")
+    except LocalAIConfigurationError:
+        return
+    raise AssertionError("Expected LocalAIConfigurationError when the server is unreachable")

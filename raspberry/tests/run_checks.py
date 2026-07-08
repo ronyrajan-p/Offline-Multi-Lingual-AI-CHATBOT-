@@ -49,17 +49,14 @@ def main() -> None:
     assert controller._parse_language_command("/ lang hi") == "hi"
     assert controller._parse_language_command("/language ta") == "ta"
     assert controller._parse_language_command("What is your name") is None
-    ai = LocalAI(model_path=__file__)
-    command = ai._build_llama_command("prompt", "--no-conversation")
-    assert "--no-conversation" in command
-    assert "--log-disable" in command
+    ai = LocalAI()
     assert ai._clean_model_output(
         "<|im_start|>system\nx\n<|im_start|>assistant\nhello<|im_end|>"
     ) == "hello"
 
     raised = False
     try:
-        LocalAI(allow_fallback=False).generate("prompt", "hello")
+        LocalAI(host="127.0.0.1", port=1, allow_fallback=False).generate("prompt", "hello")
     except LocalAIConfigurationError:
         raised = True
     assert raised
