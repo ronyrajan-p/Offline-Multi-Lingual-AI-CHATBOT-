@@ -10,7 +10,7 @@ from raspberry.core.prompt_builder import PromptBuilder
 from raspberry.core.response_formatter import ResponseFormatter
 from raspberry.display.oled_driver import ConsoleOLEDDriver, HardwareOLEDDriver
 from raspberry.display.screen_manager import ScreenManager
-from raspberry.input.keyboard import KeyboardInput
+from raspberry.input.keyboard import KeyboardInput, USBEvdevKeyboardInput
 from raspberry.services.local_ai import LocalAI
 from raspberry.services.offline_translation import OfflineTranslator
 from raspberry.services.storage import SQLiteStorage
@@ -45,7 +45,7 @@ def build_controller() -> DeviceController:
     return DeviceController(
         chatbot=chatbot,
         display=display,
-        keyboard=KeyboardInput(),
+        keyboard=_build_keyboard_input(),
         storage=storage,
         default_language=config.default_language,
         response_page_seconds=config.display_page_seconds,
@@ -72,6 +72,21 @@ def _build_display_driver():
     raise ValueError(
         "CHATBOT_DISPLAY_DRIVER must be 'console', 'ssd1306_i2c', or 'sh1106_i2c'."
     )
+
+
+def _build_keyboard_input():
+    """Select the configured input driver.
+
+    `console` requires a real attached terminal and is for development only.
+    A systemd service has no controlling terminal, so `usb_evdev` is what the
+    finished hardware build must use.
+    """
+
+    if config.input_driver == "console":
+        return KeyboardInput()
+    if config.input_driver == "usb_evdev":
+        return USBEvdevKeyboardInput(device_path=config.keyboard_device_path)
+    raise ValueError("CHATBOT_INPUT_DRIVER must be 'console' or 'usb_evdev'.")
 
 
 def main() -> None:

@@ -71,7 +71,11 @@ class DeviceController:
 
         self.startup()
         while True:
-            message = self.keyboard.read_message()
+            try:
+                message = self.keyboard.read_message()
+            except (EOFError, KeyboardInterrupt):
+                self.display.show(Screen("Bye", "Offline chatbot stopped"))
+                break
             if not message:
                 continue
             if message.lower() in {"/quit", "/exit"}:

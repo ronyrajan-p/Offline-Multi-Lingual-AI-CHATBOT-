@@ -48,6 +48,13 @@ class AppConfig:
     service; `llama_server_startup_wait_seconds` controls how long the
     controller waits for `/health` at boot before giving up and using the
     fallback responder.
+    `input_driver` accepts `console` (blocking `input()`, only works with a
+    real attached terminal) and `usb_evdev` (reads raw key events directly
+    from a USB keyboard device node). A systemd service has no controlling
+    terminal, so `console` mode raises `EOFError` immediately on read; the
+    finished hardware build must use `usb_evdev`. `keyboard_device_path`
+    pins a specific `/dev/input/eventN` node; leave it unset to auto-detect
+    the first attached device that reports keyboard-style keys.
     """
 
     database_path: Path = BASE_DIR / "database" / "chatbot.sqlite"
@@ -72,6 +79,8 @@ class AppConfig:
     local_ai_max_tokens: int = 80
     default_language: str = "en"
     display_driver: str = "console"
+    input_driver: str = "console"
+    keyboard_device_path: str | None = None
     allow_fallback_ai: bool = True
     require_translation: bool = False
 
@@ -99,6 +108,8 @@ config = AppConfig(
     local_ai_max_tokens=_env_int("CHATBOT_AI_MAX_TOKENS", 80),
     default_language=os.getenv("CHATBOT_LANGUAGE", "en"),
     display_driver=os.getenv("CHATBOT_DISPLAY_DRIVER", "console"),
+    input_driver=os.getenv("CHATBOT_INPUT_DRIVER", "console"),
+    keyboard_device_path=os.getenv("CHATBOT_KEYBOARD_DEVICE") or None,
     allow_fallback_ai=_env_bool("CHATBOT_ALLOW_FALLBACK_AI", True),
     require_translation=_env_bool("CHATBOT_REQUIRE_TRANSLATION", False),
 )
